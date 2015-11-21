@@ -1,0 +1,143 @@
+---
+title: "The Effect of Vitamin C on Tooth Growth in Guinea Pigs"
+author: "Jonathan Bouchet"
+date: "November 21, 2015"
+output: pdf_document
+---
+##*<span style="color:red">Instruction<span>*
+
+1. Load the ToothGrowth data and perform some basic exploratory data analyses 
+
+2. Provide a basic summary of the data.
+
+3. Use confidence intervals and/or hypothesis tests to compare tooth growth by supp and dose. (Only use the techniques from class, even if there's other approaches worth considering)
+
+4. State your conclusions and the assumptions needed for your conclusions. 
+
+##*<span style="color:red">Preambule<span>*
+```{r}
+library(datasets)
+data(ToothGrowth)
+```
+A brief explanation of the data is given in the help :
+```{r eval=FALSE}  
+help(ToothGroth)
+```
+
+An overview of the data shows that it consists of a dataframe with 60 observations on 3 variables :
+
+```{r eval=FALSE}
+>str(ToothGrowth)
+'data.frame':	60 obs. of  3 variables:
+ $ len : num  4.2 11.5 7.3 5.8 6.4 10 11.2 11.2 5.2 7 ...
+ $ supp: Factor w/ 2 levels "OJ","VC": 2 2 2 2 2 2 2 2 2 2 ...
+ $ dose: num  0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 ...
+>summary(ToothGrowth)
+      len        supp         dose 
+ Min.   : 4.20   OJ:30   Min.   :0.500  
+ 1st Qu.:13.07   VC:30   1st Qu.:0.500  
+ Median :19.25           Median :1.000  
+ Mean   :18.81           Mean   :1.167  
+ 3rd Qu.:25.27           3rd Qu.:2.000  
+ Max.   :33.90           Max.   :2.000 
+ ```
+We can summarize the data with the following plot :
+```{r}
+boxplot(len~supp*dose, data=ToothGrowth,col=(c("plum1","lightblue")),main="Tooth Growth", xlab="Supplement and Dose",ylab="length")
+```
+
+###*<span style="color:blue">Comments :<span>*
+1. We see that the length increase in both delivery method ($\textbf{OJ}$: orange juice or $\textbf{VC}$:vitamin C ) when the dose increase
+
+2. $\textbf{OJ}$ supplement is always above $\textbf{VC}$ for a given dose, meaning that it is more effective than $\textbf{VC}$. It seems to be especially true for the low dose level.
+
+
+To make the manipulation of the data :
+```{r}
+attach(ToothGrowth)
+```
+
+##*<span style="color:red">Analysis<span>*
+
+We split the original dataset into 6 columns (3 doses, 2 supplements) before doing the confidence intervals with t-tests, and we rename them.
+
+```{r}
+DoseGroups<-as.data.frame(split(len,list(supp,dose)))
+names(DoseGroups) <- c('OJ_d05','VC_d05','OJ_d1','VC_d1','OJ_d2','VC_d2')
+```
+
+```{r eval = FALSE}
+> str(DoseGroups)
+'data.frame':	10 obs. of  6 variables:
+ $ OJ_d05: num  15.2 21.5 17.6 9.7 14.5 10 8.2 9.4 16.5 9.7
+ $ VC_d05: num  4.2 11.5 7.3 5.8 6.4 10 11.2 11.2 5.2 7
+ $ OJ_d1 : num  19.7 23.3 23.6 26.4 20 25.2 25.8 21.2 14.5 27.3
+ $ VC_d1 : num  16.5 16.5 15.2 17.3 22.5 17.3 13.6 14.5 18.8 15.5
+ $ OJ_d2 : num  25.5 26.4 22.4 24.5 24.8 30.9 26.4 27.3 29.4 23
+ $ VC_d2 : num  23.6 18.5 33.9 25.5 26.4 32.5 26.7 21.5 23.3 29.5
+```
+
+Now our data consists of 10 observations (pigs) for each of the configurations (6 = 3 doses $\times$ 2 supplements).  
+As the number of observations are not high enough with perform t-tests with assumption that these are independent groups (i.e., not paired).
+
+As the number of observations are the same for each group, it doesn’t make a difference whether the variances are equal for different groups or not. We do all the analysis assuming unequal variance.
+
+The null hypothesis tested ($H_{0}$) is : there is no difference in the mean for each supplement and therefore $\textbf{OJ}$ and $\textbf{VC}$ have the same effect on tooth growth.
+
+We display the results of the lower ("low") and upper ("up") value of the Confidence Interval, as well as the p-value for each dose.
+<!--
+###*<span style="color:blue">dose = 0.5 mg<span>*
+```{r}
+t.test(DoseGroups['OJ_d05'] - DoseGroups['VC_d05'])$conf
+t.test(DoseGroups['OJ_d05'] - DoseGroups['VC_d05'])$p.value
+```
+
+###*<span style="color:blue">dose = 1.0 mg<span>*
+```{r}
+t.test(DoseGroups['OJ_d1'] - DoseGroups['VC_d1'],paired = FALSE,var.equal = FALSE)$conf
+t.test(DoseGroups['OJ_d1'] - DoseGroups['VC_d1'],paired = FALSE,var.equal = FALSE)$p.value
+```
+
+###*<span style="color:blue">dose = 2.0 mg<span>*
+```{r}
+t.test(DoseGroups['OJ_d2'] - DoseGroups['VC_d2'],paired = FALSE,var.equal = FALSE)$conf
+t.test(DoseGroups['OJ_d2'] - DoseGroups['VC_d2'],paired = FALSE,var.equal = FALSE)$p.value
+```
+-->
+
+```{r}
+i<-1;
+counter<-1;
+M<-matrix(ncol=3,nrow=3);
+dimnames(M) = list(c("dose=0.5 mg","dose=1.0 mg","dose=2.0 mg"),c("low","up","p-value"));
+while ( i < 6) {
+  M[counter,1]<-t.test(DoseGroups[i] - DoseGroups[i+1],paired = F,var.equal = F)$conf.int[1]; 
+  M[counter,2]<-t.test(DoseGroups[i] - DoseGroups[i+1],paired = F,var.equal = F)$conf.int[2]; 
+  M[counter,3]<-t.test(DoseGroups[i] - DoseGroups[i+1],paired = F,var.equal = F)$p.value;
+  i<-i+2;
+  counter<-counter+1;}
+print(M)
+```
+
+We see that :
+
+1. the confidence levels for dose = 0.5 mg and dose = 1.0 mg do not contain zero, and the p-value is lower than 0.05. In these 2 cases we can reject the $H_{0}$. Thus the difference in the mean we had seen with the plot between the 2 supplements is real.
+
+2. For the last dose, the Confidence interval does contains zero with a p-value>.95, thus we cannot reject the null hypothesis, thus we cannot conclude on the efffectiveness of the impact between the 2 supplements for this dose.
+<!--
+```{r}
+i<-1;
+counter<-1;
+res<-vector(length=3);
+names(res)<-c("p-value dose=0.5 mg","p-value dose=1.0 mg","p=value dose=2.0 mg");
+while ( i < 6) {res[counter]<-t.test(DoseGroups[i] - DoseGroups[i+1],paired = F,var.equal = F)$p.value;i<-i+2;counter<-counter+1;}
+res;
+```
+-->
+
+###*<span style="color:blue">notes<span>* 
+It is also important to notice than when comparing data from different doses and/or different, the confidence interval are always negative. For example :
+```{r}
+t.test(DoseGroups['OJ_d05'] - DoseGroups['VC_d1'],paired = F,var.equal = F)$conf
+t.test(DoseGroups['OJ_d05'] - DoseGroups['VC_d2'],paired = F,var.equal = F)$conf
+```
